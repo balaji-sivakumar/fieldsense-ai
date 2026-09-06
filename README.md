@@ -512,11 +512,11 @@ Claude Code should follow these rules throughout development:
 | Date | Milestone | Status | Evidence/notes |
 | --- | --- | --- | --- |
 | 2026-09-05 | Product definition and architecture | Complete | README created |
-| 2026-09-05 | Milestone 0 | Not started | Repository setup is next |
+| 2026-09-06 | Milestone 0 | Complete | git init + first commit; CLAUDE.md, .gitignore, .env.example, dev.md added |
 
 ## Next task
 
-Complete **Milestone 0 only**. Do not begin AssemblyAI integration yet.
+Complete **Milestone 1: thin vertical slice**. Do not begin AssemblyAI integration yet — see `tasks.md` for the task list.
 
 ## First prompt to give Claude Code
 

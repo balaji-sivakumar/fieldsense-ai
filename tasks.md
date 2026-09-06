@@ -7,13 +7,13 @@ milestone's exit condition is met.
 
 ## M0 — Repository & instructions (Sep 5–7)
 
-- [ ] `git init`, first commit, make the repo public-ready
-- [ ] Keep `README.md` as canonical; retire or clearly mark `FieldSense_AI_README.md` as superseded
-- [ ] Write `CLAUDE.md` with the working agreement + MVP constraints (from README §"Claude Code working agreement")
-- [ ] Add `.gitignore` (`.env`, `__pycache__/`, `venv/`, `node_modules/`, `dist/`, `.DS_Store`)
-- [ ] Add `.env.example` with empty values for all 7 vars (`ASSEMBLYAI_API_KEY`, `DATABASE_URL`, `CHROMA_API_KEY`, `CHROMA_TENANT`, `CHROMA_DATABASE`, `ALLOWED_ORIGINS`, `APP_ENV`)
-- [ ] Document exact local run/test commands (backend + frontend) in README or `docs/dev.md`
-- [ ] Create only the smallest folder skeleton needed for M1 — do not scaffold all modules from the suggested repo structure yet
+- [x] `git init`, first commit, made locally (remote deferred to M7/M8 by choice)
+- [x] Keep `README.md` as canonical; `FieldSense_AI_README.md` deleted
+- [x] Write `CLAUDE.md` with the working agreement + MVP constraints (from README §"Claude Code working agreement")
+- [x] Add `.gitignore` (`.env`, `__pycache__/`, `venv/`, `node_modules/`, `dist/`, `.DS_Store`, `.idea/`)
+- [x] Add `.env.example` with empty values for all 7 vars (`ASSEMBLYAI_API_KEY`, `DATABASE_URL`, `CHROMA_API_KEY`, `CHROMA_TENANT`, `CHROMA_DATABASE`, `ALLOWED_ORIGINS`, `APP_ENV`)
+- [x] Document exact local run/test commands (backend + frontend) in `dev.md`
+- [x] Skipped folder skeleton by design — deferred entirely to M1, per README's "don't scaffold prematurely" rule
 
 **Exit condition:** repo is cloneable, documented, and has no secrets committed.
 
