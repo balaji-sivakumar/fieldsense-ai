@@ -5,6 +5,25 @@ milestone lists concrete tasks and its exit condition. Work top to
 bottom — do not start a milestone's tasks before the previous
 milestone's exit condition is met.
 
+This file is the live tracker: checkboxes get ticked and the status
+table below gets updated as each milestone progresses, committed
+along with the work that completed it.
+
+## Status
+
+| Milestone | Dates | Status |
+| --- | --- | --- |
+| M0 — Repository & instructions | Sep 5–7 | Complete |
+| M1 — Thin vertical slice | Sep 5–7 | Not started |
+| M2 — AssemblyAI voice loop | Sep 8–10 | Not started |
+| M3 — Tool calling | Sep 11–14 | Not started |
+| M4 — RAG | Sep 15–17 | Not started |
+| M5 — Complete demo scenarios | Sep 18–20 | Not started |
+| M6 — Safety and interruption | Sep 21–23 | Not started |
+| M7 — Deployment | Sep 24–25 | Not started |
+| Submission content | Sep 26–27 | Not started |
+| M8 — Final recording & submission | Sep 28–30 | Not started |
+
 ## M0 — Repository & instructions (Sep 5–7)
 
 - [x] `git init`, first commit, made locally (remote deferred to M7/M8 by choice)
