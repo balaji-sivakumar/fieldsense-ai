@@ -1,0 +1,10 @@
+{
+  "assets": [
+    {
+      "asset_id": "AC-104",
+      "model": "ACX-200",
+      "site_id": "SITE-01",
+      "manufacturer": "DemoAir"
+    }
+  ]
+}

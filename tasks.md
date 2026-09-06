@@ -14,7 +14,7 @@ along with the work that completed it.
 | Milestone | Dates | Status |
 | --- | --- | --- |
 | M0 — Repository & instructions | Sep 5–7 | Complete |
-| M1 — Thin vertical slice | Sep 5–7 | Not started |
+| M1 — Thin vertical slice | Sep 5–7 | Complete |
 | M2 — AssemblyAI voice loop | Sep 8–10 | Not started |
 | M3 — Tool calling | Sep 11–14 | Not started |
 | M4 — RAG | Sep 15–17 | Not started |
@@ -38,16 +38,18 @@ along with the work that completed it.
 
 ## M1 — Thin vertical slice (Sep 5–7)
 
-- [ ] `backend/app.py` — minimal FastAPI app with a health endpoint
-- [ ] `backend/database.py` + `backend/models.py` — SQLite for local dev, one `assets` table
-- [ ] `backend/data/seed_data.json` — seed asset `AC-104`
-- [ ] One deterministic telemetry tool (e.g. `get_live_telemetry`) returning static/synthetic values
-- [ ] One hardcoded manual lookup result (not real RAG yet — stub for `search_manual`)
-- [ ] `create_work_order` tool + `work_orders` table
-- [ ] Minimal browser UI: pick an asset, trigger the tool calls, show the work order created
-- [ ] Backend tests (pytest) covering the tool(s) and DB writes
+- [x] `backend/app.py` — FastAPI app with `/health`, `/assets/{asset_id}`, and `/tools/*` endpoints
+- [x] `backend/database.py` + `backend/models.py` — SQLAlchemy on SQLite for local dev, `assets` + `work_orders` tables
+- [x] `backend/data/seed_data.json` — seed asset `AC-104` (model `ACX-200`)
+- [x] `get_live_telemetry` — deterministic synthetic reading
+- [x] `search_manual` stub — hardcoded manual lookup result (real RAG in M4)
+- [x] `create_work_order` tool + `work_orders` table
+- [x] `backend/tool_registry.py` — pre-shaped dispatch pattern (`TOOLS` dict + `dispatch()`), no schema validation yet (M3 adds that)
+- [x] Real React/Vite/TS frontend (`frontend/`): asset details, telemetry, manual stub, and work-order creation buttons, each rendering its JSON result
+- [x] Backend tests (pytest, 8 tests) covering all tools, DB writes, and the unknown-asset error path — all passing
+- [x] Manually verified in an actual browser (Chrome via claude-in-chrome): all four buttons work end-to-end against the real backend/DB, no console errors
 
-**Exit condition:** one request traverses UI → backend → tools → DB successfully, with no AssemblyAI involved.
+**Exit condition:** met — verified live in a browser, not just by tests. One request traverses UI → backend → tools → DB successfully, with no AssemblyAI involved.
 
 ## M2 — AssemblyAI voice loop (Sep 8–10)
 
