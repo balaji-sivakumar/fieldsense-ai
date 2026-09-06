@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api, type Asset, type ManualResult, type Telemetry, type WorkOrder } from "./api";
 import VoicePanel from "./VoicePanel";
+import Dashboard from "./Dashboard";
 import "./App.css";
 
 const ASSET_ID = "AC-104";
@@ -60,6 +61,7 @@ export default function App() {
       {error && <p style={{ color: "crimson" }}>Error: {error}</p>}
 
       <VoicePanel />
+      <Dashboard />
     </main>
   );
 }

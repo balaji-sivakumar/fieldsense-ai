@@ -8,6 +8,7 @@ Protocol with the browser:
 """
 
 import asyncio
+import json
 import logging
 import os
 
@@ -15,6 +16,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 
 from assemblyai_gateway import AssemblyAIGateway
 from session_manager import session_manager
+from tool_registry import dispatch
 
 logger = logging.getLogger("voice_ws")
 
@@ -84,7 +86,30 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
                 await gateway.send_audio(data)
 
     async def pump_assemblyai_to_browser() -> None:
+        # AssemblyAI's protocol requires tool.result to be sent only after
+        # reply.done is the latest received event (so the agent finishes
+        # its current turn, e.g. "one moment while I check...", before the
+        # tool result triggers a new turn) — so results are queued here and
+        # flushed on reply.done rather than sent immediately on tool.call.
+        pending_tool_results: list[dict] = []
+
         async for event in gateway.events():
+            event_type = event.get("type")
+
+            if event_type == "tool.call":
+                call_id = event.get("call_id")
+                name = event.get("name")
+                arguments = event.get("arguments") or {}
+                result = await dispatch(name, arguments, session_id=session.session_id)
+                pending_tool_results.append(
+                    {
+                        "call_id": call_id,
+                        "result": json.dumps(result),
+                        "is_error": result.get("status") == "error",
+                    }
+                )
+                continue
+
             translated = _translate_event(event)
             if translated is not None:
                 try:
@@ -93,6 +118,11 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
                     # Browser disconnected between the last received frame
                     # and this send — benign race, not a session error.
                     return
+
+            if event_type == "reply.done" and pending_tool_results:
+                for pending in pending_tool_results:
+                    await gateway.send_tool_result(**pending)
+                pending_tool_results.clear()
 
     tasks = [
         asyncio.create_task(pump_browser_to_assemblyai()),

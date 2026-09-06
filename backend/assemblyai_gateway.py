@@ -10,10 +10,15 @@ No pre-created agent is used; session config is sent inline via
 session.update right after connecting. Audio is 24kHz mono 16-bit PCM,
 base64-encoded, in both directions.
 
-M2 scope: no tools registered yet (session has none). M3 will decide
-between AssemblyAI's HTTP tools (server-to-server, AssemblyAI calls our
-REST endpoints directly) and client-side tool.call/tool.result relayed
-through this gateway.
+M3: client-side function tools (not AssemblyAI's HTTP tools) — chosen
+because HTTP tools require AssemblyAI's servers to reach our endpoint
+over the public internet, which localhost can't do before M7
+deployment, and because client-side tools keep the entire call/result
+round trip inside this one WebSocket connection, matching both the
+hackathon's "single connection" requirement and CLAUDE.md's rule that
+the LLM only ever *decides* to call a tool — execution stays fully in
+our own backend's control (tool_registry.dispatch, called from
+voice_ws.py). See tool_schemas.py for the JSON-Schema tool definitions.
 """
 
 import base64
@@ -22,14 +27,33 @@ from typing import AsyncIterator, Optional
 
 import websockets
 
+from tool_schemas import TOOL_SCHEMAS
+
 ASSEMBLYAI_WS_URL = "wss://agents.assemblyai.com/v1/ws"
 
 SYSTEM_PROMPT = (
-    "You are FieldSense, a voice assistant for industrial field "
-    "technicians servicing air compressors. Keep responses to 1-2 "
-    "sentences. You do not yet have access to real asset data."
+    "You are FieldSense, a voice assistant for industrial field technicians "
+    "servicing air compressors. Keep responses to 1-2 sentences. Always use "
+    "the available tools to look up real asset details, telemetry, "
+    "maintenance history, manual guidance, and parts inventory rather than "
+    "guessing — never invent asset data, readings, or manual guidance that "
+    "didn't come back from a tool call."
 )
 GREETING = "Hi, this is FieldSense. How can I help?"
+
+
+def _as_function_tools() -> list[dict]:
+    return [
+        {
+            "type": "function",
+            "name": schema["name"],
+            "description": schema["description"],
+            "parameters": schema["parameters"],
+            "execution_mode": "interactive",
+            "timeout_seconds": 30,
+        }
+        for schema in TOOL_SCHEMAS
+    ]
 
 
 def build_session_update() -> dict:
@@ -38,6 +62,7 @@ def build_session_update() -> dict:
         "session": {
             "system_prompt": SYSTEM_PROMPT,
             "greeting": GREETING,
+            "tools": _as_function_tools(),
             "input": {"format": {"encoding": "audio/pcm"}},
             "output": {"format": {"encoding": "audio/pcm"}},
         },
@@ -62,6 +87,15 @@ class AssemblyAIGateway:
         message = {
             "type": "input.audio",
             "audio": base64.b64encode(pcm_bytes).decode("ascii"),
+        }
+        await self._ws.send(json.dumps(message))
+
+    async def send_tool_result(self, call_id: str, result: str, is_error: bool = False) -> None:
+        message = {
+            "type": "tool.result",
+            "call_id": call_id,
+            "result": result,
+            "is_error": is_error,
         }
         await self._ws.send(json.dumps(message))
 

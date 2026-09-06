@@ -23,7 +23,7 @@ def init_db() -> None:
 
 
 def _seed_if_empty() -> None:
-    from models import Asset
+    from models import Asset, MaintenanceRecord, PartsInventory
 
     db = SessionLocal()
     try:
@@ -32,6 +32,10 @@ def _seed_if_empty() -> None:
         seed = json.loads(SEED_DATA_PATH.read_text())
         for asset in seed.get("assets", []):
             db.add(Asset(**asset))
+        for record in seed.get("maintenance_records", []):
+            db.add(MaintenanceRecord(**record))
+        for part in seed.get("parts_inventory", []):
+            db.add(PartsInventory(**part))
         db.commit()
     finally:
         db.close()

@@ -16,7 +16,7 @@ along with the work that completed it.
 | M0 — Repository & instructions | Sep 5–7 | Complete |
 | M1 — Thin vertical slice | Sep 5–7 | Complete |
 | M2 — AssemblyAI voice loop | Sep 8–10 | Complete |
-| M3 — Tool calling | Sep 11–14 | Not started |
+| M3 — Tool calling | Sep 11–14 | Complete |
 | M4 — RAG | Sep 15–17 | Not started |
 | M5 — Complete demo scenarios | Sep 18–20 | Not started |
 | M6 — Safety and interruption | Sep 21–23 | Not started |
@@ -67,16 +67,20 @@ along with the work that completed it.
 
 ## M3 — Tool calling (Sep 11–14)
 
-- [ ] Write strict JSON Schemas for all 9 tools listed in README §"Initial tool contracts"
-- [ ] `backend/tool_registry.py` — validate incoming tool calls, dispatch, return structured JSON
-- [ ] Implement remaining tools: `get_asset_details`, `get_maintenance_history`, `check_parts_inventory`, `record_observation`, `escalate_to_specialist`, `complete_work_order` (schema-complete; `search_manual` stays stubbed until M4)
-- [ ] Audit every tool call to `tool_audit_log` (tool name, sanitized args, result status, session ID, timestamp)
-- [ ] Structured error returned on missing/invalid data or timeout — never let a raw exception reach AssemblyAI
-- [ ] `/ws/dashboard` endpoint, separate from `/ws/voice`; broadcast tool calls/results to connected dashboard sockets
-- [ ] Dashboard UI: live tool call/argument/result feed
-- [ ] Tests: schema validation, valid/invalid asset IDs, tool timeouts, malformed args
+- [x] Write strict JSON Schemas for all 9 tools (`backend/tool_schemas.py`)
+- [x] `backend/tool_registry.py` — validates args via `jsonschema`, dispatches with a 10s timeout, records audit + broadcasts to dashboard; single chokepoint for both REST and voice
+- [x] Implement remaining tools: `get_maintenance_history`, `check_parts_inventory`, `record_observation`, `escalate_to_specialist`, `complete_work_order` (`search_manual` still stubbed until M4, as planned)
+- [x] Audit every tool call to `tool_audit_log` (tool name, args JSON, status, session ID, timestamp)
+- [x] Structured error on missing/invalid args (JSON-Schema validation) and on timeout (`asyncio.wait_for`) — never a raw exception reaching AssemblyAI
+- [x] `/ws/dashboard` endpoint (`dashboard_hub.py`) — broadcasts every tool call/result live, from REST or voice
+- [x] Dashboard UI: live tool call feed (`frontend/src/Dashboard.tsx`)
+- [x] Tests: 18 pytest cases — all 9 tools, schema validation failures (missing field, wrong type), unknown tool, unknown asset/work-order-id errors
+- [x] Architecture decision (grounded in AssemblyAI's live docs, not assumed): **client-side function tools**, not HTTP tools — HTTP tools need AssemblyAI's servers to reach a public URL, unreachable from `localhost` before M7; client-side tools keep the whole call/result round trip inside the one WebSocket connection already open, matching both the hackathon's "single connection" requirement and the rule that the LLM only *decides*, execution stays backend-controlled
+- [x] `tool.result` sent only after `reply.done` per AssemblyAI's required ordering (queued in `voice_ws.py`, flushed on `reply.done`)
 
-**Exit condition:** AssemblyAI can call any of the 9 tools and get back a structured, audited, spoken-ready result; the dashboard shows it live.
+**Exit condition:** met — verified live by voice, not just tests. Real `tool_audit_log` rows carry the actual voice session's UUID: `get_live_telemetry({"asset_id":"AC-1"})` correctly errored (misheard asset ID), then `get_live_telemetry({"asset_id":"AC-104"})` and `get_maintenance_history({"asset_id":"AC-104"})` both succeeded — self-correction handled cleanly, spoken answer grounded in real tool results, dashboard updated live throughout.
+
+**Bug found and fixed during this milestone:** `/ws/dashboard` had the same disconnect-handling mistake as `voice_ws.py` had before the M2 review — raw `websocket.receive()` without checking for `"websocket.disconnect"`, causing an unhandled `RuntimeError` when a dashboard tab closed. Fixed with the same pattern already used in `voice_ws.py`.
 
 ## M4 — RAG (Sep 15–17)
 
