@@ -514,10 +514,11 @@ Claude Code should follow these rules throughout development:
 | 2026-09-05 | Product definition and architecture | Complete | README created |
 | 2026-09-06 | Milestone 0 | Complete | git init + first commit; CLAUDE.md, .gitignore, .env.example, dev.md added |
 | 2026-09-06 | Milestone 1 | Complete | FastAPI backend (SQLite, tool_registry, 4 tools) + React/Vite/TS frontend; 8/8 pytest passing; verified end-to-end in a real browser |
+| 2026-09-06 | Milestone 2 | Complete | Backend holds the AssemblyAI Voice Agent API session directly (assemblyai_gateway.py, voice_ws.py); mic capture/playback in the frontend (voice.ts, VoicePanel.tsx); verified live — greeting heard, transcript shown, state progression correct; error-path review found and fixed an asyncio task-cancellation bug (billing leak on abandoned sessions) |
 
 ## Next task
 
-Complete **Milestone 2: AssemblyAI voice loop**. See `tasks.md` for the task list.
+Complete **Milestone 3: Tool calling**. See `tasks.md` for the task list.
 
 ## First prompt to give Claude Code
 

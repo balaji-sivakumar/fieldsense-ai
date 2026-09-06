@@ -1,10 +1,14 @@
 import os
 
-from fastapi import FastAPI, HTTPException
+from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
-from database import init_db
-from tool_registry import dispatch
+load_dotenv()  # must run before database.py reads DATABASE_URL at import time
+
+from database import init_db  # noqa: E402
+from tool_registry import dispatch  # noqa: E402
+from voice_ws import handle_voice_websocket  # noqa: E402
 
 app = FastAPI(title="FieldSense AI backend")
 
@@ -48,3 +52,8 @@ def tool_search_manual(payload: dict) -> dict:
 @app.post("/tools/create_work_order")
 def tool_create_work_order(payload: dict) -> dict:
     return dispatch("create_work_order", payload)
+
+
+@app.websocket("/ws/voice")
+async def ws_voice(websocket: WebSocket) -> None:
+    await handle_voice_websocket(websocket)

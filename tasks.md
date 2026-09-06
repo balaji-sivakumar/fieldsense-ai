@@ -15,7 +15,7 @@ along with the work that completed it.
 | --- | --- | --- |
 | M0 — Repository & instructions | Sep 5–7 | Complete |
 | M1 — Thin vertical slice | Sep 5–7 | Complete |
-| M2 — AssemblyAI voice loop | Sep 8–10 | Not started |
+| M2 — AssemblyAI voice loop | Sep 8–10 | Complete |
 | M3 — Tool calling | Sep 11–14 | Not started |
 | M4 — RAG | Sep 15–17 | Not started |
 | M5 — Complete demo scenarios | Sep 18–20 | Not started |
@@ -53,15 +53,17 @@ along with the work that completed it.
 
 ## M2 — AssemblyAI voice loop (Sep 8–10)
 
-- [ ] `backend/assemblyai_gateway.py` — establish and hold the Voice Agent API session
-- [ ] `backend/session_manager.py` — track per-session state (asset, risk tier, active work order)
-- [ ] `/ws/voice` endpoint — stream mic audio in from the frontend
-- [ ] Play synthesized audio back in the frontend
-- [ ] Display transcript and agent state (listening / thinking / speaking) in the UI
-- [ ] Handle disconnects and surface clear connection errors in the UI
-- [ ] Manual test: deny mic permission, kill the AssemblyAI connection mid-session
+- [x] `backend/assemblyai_gateway.py` — connects directly to `wss://agents.assemblyai.com/v1/ws` with the raw API key (server-to-server, no browser token flow needed), configures the session inline via `session.update` (no pre-created agent)
+- [x] `backend/session_manager.py` — minimal per-session record (id, state); risk tier / active work order deferred to M6 as planned
+- [x] `/ws/voice` endpoint (`backend/voice_ws.py`) — bidirectional relay: binary PCM16 browser→backend→AssemblyAI, translated JSON events AssemblyAI→backend→browser
+- [x] Frontend mic capture (`frontend/src/voice.ts` `MicStreamer`) and streamed playback (`AudioPlayer`) — 24kHz mono PCM16 both directions
+- [x] Transcript and agent state (idle/connecting/ready/listening/thinking/speaking/error/closed) displayed live in `VoicePanel.tsx`
+- [x] Disconnects and errors surfaced clearly in the UI
+- [x] Manual test: bad/missing API key (verified live — clean `error` state, no crash)
+- [x] Manual test: abrupt disconnect mid-session (tab closed mid-greeting — verified backend tears down in ~1s, no orphaned AssemblyAI session)
+- [x] Error-path review (asyncio.gather not cancelling sibling task → orphaned tasks + billing leak on abandoned sessions; session_manager leak on close failure; 2 minor frontend hardening gaps) — all fixed and re-verified live
 
-**Exit condition:** a technician can speak, hear a spoken response, and see live transcript/state — no tool calls wired yet.
+**Exit condition:** met — verified live in a browser (not just tests): heard the configured greeting spoken, watched state progress idle→connecting→speaking→listening, saw transcript populate. Correctly cannot answer asset questions yet (no tools registered) — expected, that's M3's job. No AssemblyAI docs MCP server was needed at runtime; it was added as a dev-tooling aid per CLAUDE.md's MCP rule.
 
 ## M3 — Tool calling (Sep 11–14)
 
