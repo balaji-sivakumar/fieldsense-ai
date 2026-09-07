@@ -22,6 +22,22 @@ cd backend
 pytest
 ```
 
+## Validate tools against a running backend
+
+`tests/test_tools.py` calls `tool_registry.dispatch()` directly against
+an isolated test DB. To sanity-check the actual running server instead
+(real HTTP, real dev DB) — e.g. after starting the backend, or after a
+tool change — run:
+
+```bash
+cd backend
+python scripts/validate_tools.py
+```
+
+Exercises all 9 tools plus a couple of error paths, prints PASS/FAIL
+per check, exits non-zero if anything failed. Set `BACKEND_URL` to
+point at a non-default host.
+
 ## Frontend
 
 ```bash
