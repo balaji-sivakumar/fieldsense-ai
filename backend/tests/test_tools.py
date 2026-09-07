@@ -32,12 +32,6 @@ def test_get_live_telemetry_unknown_asset():
     assert result["status"] == "error"
 
 
-def test_search_manual_returns_stub_with_model():
-    result = run("search_manual", {"asset_model": "ACX-200", "fault_code": "E27"})
-    assert result["status"] == "ok"
-    assert result["result"]["asset_model"] == "ACX-200"
-    assert result["result"]["section"] == "Fault E27"
-
 
 def test_get_maintenance_history_known_asset():
     result = run("get_maintenance_history", {"asset_id": "AC-104"})

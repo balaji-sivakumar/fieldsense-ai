@@ -17,7 +17,7 @@ along with the work that completed it.
 | M1 — Thin vertical slice | Sep 5–7 | Complete |
 | M2 — AssemblyAI voice loop | Sep 8–10 | Complete |
 | M3 — Tool calling | Sep 11–14 | Complete |
-| M4 — RAG | Sep 15–17 | Not started |
+| M4 — RAG | Sep 15–17 | Complete |
 | M5 — Complete demo scenarios | Sep 18–20 | Not started |
 | M6 — Safety and interruption | Sep 21–23 | Not started |
 | M7 — Deployment | Sep 24–25 | Not started |
@@ -84,14 +84,16 @@ along with the work that completed it.
 
 ## M4 — RAG (Sep 15–17)
 
-- [ ] Write or source one synthetic/openly-licensed compressor manual (e.g. "ACX-200 Service Manual")
-- [ ] Chunk the manual and load it into Chroma Cloud with the metadata schema from README §"Chroma Cloud" (`equipment_type`, `manufacturer`, `model`, `document`, `section`, `page`, `content_type`)
-- [ ] Implement real `search_manual(asset_model, fault_code, question)` — filter by `asset_model` first, then query
-- [ ] Every result returns `document`, `section`, `page`, `content_type`, and text
-- [ ] Dashboard: show retrieved manual sources per query
-- [ ] Tests: retrieval never leaks results from another asset model
+- [x] Wrote a synthetic "ACX-200 Service Manual" (`backend/data/manuals/acx200_service_manual.py`) — 8 sections covering specs, safety, fault E27, and all three of M5's scenarios (overheating, vibration, low pressure), plus maintenance schedule and parts reference
+- [x] Chunked and ingested with the full metadata schema (`equipment_type`, `manufacturer`, `model`, `document`, `section`, `page`, `content_type`) via `backend/scripts/ingest_manual.py`
+- [x] Implemented real `search_manual(asset_model, fault_code, question)` (`tools/manual_tools.py`) — filters by `asset_model` first (required arg, enforced by JSON Schema), then does semantic query
+- [x] Every result returns `document`, `section`, `page`, `content_type`, `text`, plus `related_sections` for additional context
+- [x] Dashboard shows it via the existing generic tool-call feed (no new UI needed — same mechanism as every other tool)
+- [x] Tests: cross-model isolation proven with two *populated* fake models in an ephemeral Chroma instance (not just "empty results") — `tests/test_manual_search.py`, 3 new tests, 20/20 total passing
 
-**Exit condition:** a spoken fault-code question returns model-filtered manual evidence with visible citations on the dashboard.
+**Architecture decision:** `chroma_client.py` — Chroma Cloud if `CHROMA_API_KEY` is set, otherwise a local on-disk store (`backend/chroma_data/`, gitignored), mirroring `database.py`'s SQLite-before-Postgres pattern. Built and fully tested without needing Chroma Cloud credentials yet; switches automatically once real credentials are added to `.env`.
+
+**Exit condition:** met — verified live in the browser (real RAG retrieval, not the old stub) and via `validate_tools.py` (12/12). A free-text vibration question correctly matched the "Excessive Vibration" section with zero keyword overlap, confirming real semantic search rather than string matching.
 
 ## M5 — Complete demo scenarios (Sep 18–20)
 
