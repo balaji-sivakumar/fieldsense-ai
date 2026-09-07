@@ -117,25 +117,35 @@ export default function VoicePanel() {
     setState("idle");
   }
 
+  const isLive = state !== "idle" && state !== "closed" && state !== "error";
+
   return (
-    <section style={{ marginTop: "2rem", borderTop: "1px solid #ccc", paddingTop: "1rem" }}>
-      <h2>M2 — Voice loop</h2>
-      <p>
-        State: <strong>{state}</strong>
-      </p>
+    <section className="panel">
+      <div className="panel-header">
+        <h2>Voice session</h2>
+        <span className={`state-badge ${isLive ? "is-active" : ""} ${state === "error" ? "is-error" : ""}`}>
+          {state}
+        </span>
+      </div>
 
-      {state === "idle" || state === "closed" || state === "error" ? (
-        <button onClick={startSession}>Start voice session</button>
-      ) : (
-        <button onClick={stopSession}>Stop voice session</button>
-      )}
+      <div className="button-row">
+        {isLive ? (
+          <button onClick={stopSession}>Stop voice session</button>
+        ) : (
+          <button className="primary" onClick={startSession}>
+            Start voice session
+          </button>
+        )}
+      </div>
 
-      {errorMessage && <p style={{ color: "crimson" }}>Error: {errorMessage}</p>}
+      {errorMessage && <p className="error-text">Error: {errorMessage}</p>}
 
-      <div style={{ marginTop: "1rem" }}>
+      <div className="transcript">
+        {turns.length === 0 && <p className="transcript-empty">No conversation yet — start a session and speak.</p>}
         {turns.map((turn, i) => (
-          <p key={i}>
-            <strong>{turn.speaker === "user" ? "You" : "FieldSense"}:</strong> {turn.text}
+          <p key={i} className={`transcript-turn ${turn.speaker}`}>
+            <span className="speaker">{turn.speaker === "user" ? "You" : "FieldSense"}</span>
+            {turn.text}
           </p>
         ))}
       </div>

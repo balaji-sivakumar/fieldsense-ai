@@ -23,45 +23,62 @@ export default function App() {
   }
 
   return (
-    <main style={{ maxWidth: 480, margin: "2rem auto", fontFamily: "sans-serif" }}>
-      <h1>FieldSense AI — M1 slice</h1>
-      <p>
-        Asset: <strong>{ASSET_ID}</strong>
-      </p>
+    <div className="page">
+      <header className="page-header">
+        <h1>FieldSense AI</h1>
+        <p className="subtitle">Asset {ASSET_ID} — technician tools, voice session, and live operations feed</p>
+      </header>
 
-      <button onClick={() => run(() => api.getAsset(ASSET_ID), setAsset)}>Load asset details</button>
-      {asset && <pre>{JSON.stringify(asset, null, 2)}</pre>}
+      <div className="layout">
+        <div className="column">
+          <section className="panel">
+            <div className="panel-header">
+              <h2>Asset tools</h2>
+              <span className="hint">M1 — direct REST calls</span>
+            </div>
 
-      <button onClick={() => run(() => api.getLiveTelemetry(ASSET_ID), (r) => r.status === "ok" && setTelemetry(r.result))}>
-        Get live telemetry
-      </button>
-      {telemetry && <pre>{JSON.stringify(telemetry, null, 2)}</pre>}
+            <div className="button-row">
+              <button onClick={() => run(() => api.getAsset(ASSET_ID), setAsset)}>Load asset details</button>
+              <button
+                onClick={() =>
+                  run(() => api.getLiveTelemetry(ASSET_ID), (r) => r.status === "ok" && setTelemetry(r.result))
+                }
+              >
+                Get live telemetry
+              </button>
+              <button
+                onClick={() =>
+                  run(() => api.searchManual("ACX-200", "E27"), (r) => r.status === "ok" && setManual(r.result))
+                }
+              >
+                Search manual (fault E27)
+              </button>
+              <button
+                onClick={() =>
+                  run(
+                    () => api.createWorkOrder(ASSET_ID, "Compressor will not start, fault E27", "high"),
+                    (r) => r.status === "ok" && setWorkOrder(r.result),
+                  )
+                }
+              >
+                Create work order
+              </button>
+            </div>
 
-      <button
-        onClick={() =>
-          run(() => api.searchManual("ACX-200", "E27"), (r) => r.status === "ok" && setManual(r.result))
-        }
-      >
-        Search manual (fault E27)
-      </button>
-      {manual && <pre>{JSON.stringify(manual, null, 2)}</pre>}
+            {asset && <pre>{JSON.stringify(asset, null, 2)}</pre>}
+            {telemetry && <pre>{JSON.stringify(telemetry, null, 2)}</pre>}
+            {manual && <pre>{JSON.stringify(manual, null, 2)}</pre>}
+            {workOrder && <pre>{JSON.stringify(workOrder, null, 2)}</pre>}
+            {error && <p className="error-text">Error: {error}</p>}
+          </section>
 
-      <button
-        onClick={() =>
-          run(
-            () => api.createWorkOrder(ASSET_ID, "Compressor will not start, fault E27", "high"),
-            (r) => r.status === "ok" && setWorkOrder(r.result),
-          )
-        }
-      >
-        Create work order
-      </button>
-      {workOrder && <pre>{JSON.stringify(workOrder, null, 2)}</pre>}
+          <VoicePanel />
+        </div>
 
-      {error && <p style={{ color: "crimson" }}>Error: {error}</p>}
-
-      <VoicePanel />
-      <Dashboard />
-    </main>
+        <div className="column">
+          <Dashboard />
+        </div>
+      </div>
+    </div>
   );
 }

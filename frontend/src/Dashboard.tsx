@@ -33,18 +33,26 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <section style={{ marginTop: "2rem", borderTop: "1px solid #ccc", paddingTop: "1rem" }}>
-      <h2>M3 — Live tool call feed (dashboard)</h2>
-      {events.length === 0 && <p>No tool calls yet.</p>}
-      {events.map((e, i) => (
-        <div key={i} style={{ marginBottom: "0.75rem", fontFamily: "monospace", fontSize: "0.85rem" }}>
-          <div>
-            <strong>{e.tool_name}</strong> [{e.session_id}] — {e.result.status}
+    <section className="panel">
+      <div className="panel-header">
+        <h2>Live operations feed</h2>
+        <span className="hint">every tool call, audited</span>
+      </div>
+
+      <div className="tool-feed">
+        {events.length === 0 && <p className="tool-feed-empty">No tool calls yet.</p>}
+        {events.map((e, i) => (
+          <div key={i} className="tool-call-entry">
+            <div className="tool-call-head">
+              <span className="tool-name">{e.tool_name}</span>
+              <span className={`tool-status ${e.result.status === "ok" ? "ok" : "error"}`}>{e.result.status}</span>
+            </div>
+            <div className="tool-line">session: {e.session_id}</div>
+            <div className="tool-line">args: {JSON.stringify(e.args)}</div>
+            <div className="tool-line">result: {JSON.stringify(e.result.result ?? e.result.error)}</div>
           </div>
-          <div>args: {JSON.stringify(e.args)}</div>
-          <div>result: {JSON.stringify(e.result.result ?? e.result.error)}</div>
-        </div>
-      ))}
+        ))}
+      </div>
     </section>
   );
 }
