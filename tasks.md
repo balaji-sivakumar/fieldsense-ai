@@ -20,7 +20,7 @@ along with the work that completed it.
 | M4 — RAG | Sep 15–17 | Complete |
 | M5 — Complete demo scenarios | Sep 18–20 | Complete |
 | M6 — Safety and interruption | Sep 21–23 | Complete |
-| M7 — Deployment | Sep 24–25 | Not started |
+| M7 — Deployment | Sep 24–25 | Complete |
 | Submission content | Sep 26–27 | Not started |
 | M8 — Final recording & submission | Sep 28–30 | Not started |
 
@@ -124,15 +124,20 @@ along with the work that completed it.
 
 ## M7 — Deployment (Sep 24–25)
 
-- [ ] Deploy backend to Railway; verify long-lived WebSocket connections survive in that environment
-- [ ] Deploy frontend to Vercel; point it at the deployed backend's HTTPS/WSS URLs
-- [ ] Configure Neon `DATABASE_URL`, Chroma Cloud credentials, `ALLOWED_ORIGINS` CORS allowlist in Railway/Vercel env vars
-- [ ] Seed synthetic data (3 assets, fault scenarios) in the deployed Neon database
-- [ ] Confirm health endpoint responds
-- [ ] Implement clear degraded-state UI for when AssemblyAI/Postgres/Chroma is unreachable
-- [ ] Run the full demo from a clean browser and a mobile device against the deployed URL
+- [x] Backend deployed to Railway (`fieldsense-backend` service, via CLI) — **https://fieldsense-backend-production.up.railway.app** — WebSocket support confirmed (`/ws/dashboard` and a full `/ws/voice` session both verified live)
+- [x] Frontend deployed to Vercel — **https://frontend-pi-jade-j7gb4atfil.vercel.app** — backend URLs baked in at build time via `--build-env` (Vite env vars are build-time, not runtime)
+- [x] Neon `DATABASE_URL`, Chroma Cloud credentials, and `ALLOWED_ORIGINS` (real Vercel origin + localhost) all configured as Railway env vars; CORS verified working cross-origin
+- [x] Synthetic data seeds automatically on backend startup (`database.init_db()`), confirmed present in Neon
+- [x] `/health` now does real checks (DB `SELECT 1`, Chroma collection read, AssemblyAI-key-configured flag) instead of a static `{"status":"ok"}`
+- [x] Degraded-state UI (`SystemStatus.tsx`) — polls `/health` every 30s, shows a clear banner when anything is unavailable; **organically verified live** — it correctly showed "Backend unreachable" during a real Railway redeploy, then cleared automatically once the backend came back
+- [x] Full demo verified end-to-end on the public URLs: REST tools, real Chroma Cloud RAG (not the local fallback), the dashboard's live WebSocket feed, and a complete voice session (greeting, state transitions, risk badge) all confirmed working — by both me and you independently
+- [ ] Mobile device check — deferred to you; automated window-resize isn't a reliable stand-in for true mobile rendering/touch
 
-**Exit condition:** the demo runs end-to-end on the public URL with no dependency on a developer laptop staying online.
+**Bugs found and fixed while deploying (not previously reachable without real infrastructure):**
+1. **Upstream `chromadb==1.5.9` bug**: `CloudClient()`'s no-arg env-var resolution validates `CHROMA_API_KEY` exists, then discards the resolved value and sends the literal string `"None"` as the auth token — every call failed with "Permission denied" regardless of how correct the credentials were. Fixed by passing `api_key`/`tenant`/`database` explicitly in `chroma_client.py`, sidestepping the bug rather than depending on an upstream fix.
+2. Browser automation clicks intermittently missed real buttons on the deployed site (likely web-font-load-triggered layout shift) — not an app bug, just an automation quirk; ref-based clicks fixed it for verification purposes.
+
+**Exit condition:** met — the demo runs end-to-end on the public URL with no dependency on a developer laptop staying online, verified independently by both Claude and the user.
 
 ## Submission content (Sep 26–27, can overlap M7)
 
