@@ -6,9 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()  # must run before database.py reads DATABASE_URL at import time
 
+import chroma_client  # noqa: E402
+import database  # noqa: E402
 import telemetry_simulator  # noqa: E402
 from dashboard_hub import dashboard_hub  # noqa: E402
-from database import init_db  # noqa: E402
 from tool_registry import dispatch  # noqa: E402
 from voice_ws import handle_voice_websocket  # noqa: E402
 
@@ -25,12 +26,24 @@ app.add_middleware(
 
 @app.on_event("startup")
 def on_startup() -> None:
-    init_db()
+    database.init_db()
 
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok"}
+    # AssemblyAI isn't live-pinged here — a real connection attempt costs
+    # voice-minutes, and /health may be polled frequently by the host.
+    # DB and Chroma checks are cheap (a trivial query / collection read).
+    db_ok = database.check_connection()
+    chroma_ok = chroma_client.check_connection()
+    assemblyai_configured = bool(os.getenv("ASSEMBLYAI_API_KEY"))
+
+    return {
+        "status": "ok" if (db_ok and chroma_ok and assemblyai_configured) else "degraded",
+        "database": "ok" if db_ok else "unreachable",
+        "manual_search": "ok" if chroma_ok else "unreachable",
+        "voice": "configured" if assemblyai_configured else "not configured",
+    }
 
 
 @app.get("/assets/{asset_id}")

@@ -3,6 +3,7 @@ import { api, type Asset, type ManualResult, type Telemetry, type WorkOrder } fr
 import VoicePanel from "./VoicePanel";
 import Dashboard from "./Dashboard";
 import DemoControls from "./DemoControls";
+import SystemStatus from "./SystemStatus";
 import "./App.css";
 
 const ASSET_ID = "AC-104";
@@ -29,6 +30,8 @@ export default function App() {
         <h1>FieldSense AI</h1>
         <p className="subtitle">Asset {ASSET_ID} — technician tools, voice session, and live operations feed</p>
       </header>
+
+      <SystemStatus />
 
       <div className="layout">
         <div className="column">

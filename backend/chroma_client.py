@@ -32,3 +32,12 @@ def get_client():
 
 def get_manual_collection():
     return get_client().get_or_create_collection(name=MANUAL_COLLECTION_NAME)
+
+
+def check_connection() -> bool:
+    """Used by /health for the M7 degraded-state UI requirement."""
+    try:
+        get_manual_collection().count()
+        return True
+    except Exception:
+        return False

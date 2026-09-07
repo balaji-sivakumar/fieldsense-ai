@@ -4,6 +4,19 @@
   padding: 1.5rem 1.25rem 3rem;
 }
 
+.status-banner {
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.status-banner-error {
+  background: color-mix(in srgb, var(--danger) 15%, var(--panel-bg));
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+
 .page-header {
   margin-bottom: 1.5rem;
 }

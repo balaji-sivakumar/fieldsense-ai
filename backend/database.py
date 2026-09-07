@@ -2,7 +2,7 @@ import json
 import os
 from pathlib import Path
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./fieldsense.db")
@@ -20,6 +20,16 @@ def init_db() -> None:
 
     Base.metadata.create_all(bind=engine)
     _seed_if_empty()
+
+
+def check_connection() -> bool:
+    """Used by /health for the M7 degraded-state UI requirement."""
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        return False
 
 
 def _seed_if_empty() -> None:
