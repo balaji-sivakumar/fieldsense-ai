@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api, type Asset, type ManualResult, type Telemetry, type WorkOrder } from "./api";
 import VoicePanel from "./VoicePanel";
 import Dashboard from "./Dashboard";
+import DemoControls from "./DemoControls";
 import "./App.css";
 
 const ASSET_ID = "AC-104";
@@ -31,6 +32,8 @@ export default function App() {
 
       <div className="layout">
         <div className="column">
+          <DemoControls />
+
           <section className="panel">
             <div className="panel-header">
               <h2>Asset tools</h2>

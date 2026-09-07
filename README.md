@@ -517,10 +517,11 @@ Claude Code should follow these rules throughout development:
 | 2026-09-06 | Milestone 2 | Complete | Backend holds the AssemblyAI Voice Agent API session directly (assemblyai_gateway.py, voice_ws.py); mic capture/playback in the frontend (voice.ts, VoicePanel.tsx); verified live — greeting heard, transcript shown, state progression correct; error-path review found and fixed an asyncio task-cancellation bug (billing leak on abandoned sessions) |
 | 2026-09-06 | Milestone 3 | Complete | All 9 tools implemented with JSON-Schema validation (tool_registry.py, tool_schemas.py); client-side function tools chosen over HTTP tools (grounded in AssemblyAI docs — single-connection requirement, local-dev reachability); tool.result correctly queued until reply.done; /ws/dashboard live tool-call feed; 18/18 pytest passing; verified live by voice with real tool_audit_log evidence (including a self-corrected misheard asset ID) |
 | 2026-09-07 | Milestone 4 | Complete | Synthetic ACX-200 manual (8 sections) ingested into Chroma with full metadata schema; real search_manual replaces the stub with model-filtered semantic retrieval; chroma_client.py falls back to a local on-disk store when Chroma Cloud credentials aren't set, same pattern as SQLite-before-Postgres; cross-model leakage tested with two populated fake models, not just empty results; 20/20 pytest passing; verified live — a free-text vibration question matched the right section with zero keyword overlap |
+| 2026-09-07 | Milestone 5 | Complete | Telemetry simulator with per-asset scenario state (normal/overheating/dangerous_vibration/low_pressure), REST control + Demo controls UI panel, dashboard broadcast on change; fixed seed data so the overdue-filter scenario is genuinely deterministic; all 3 demo scenarios verified live by voice with real tool_audit_log evidence, including exact-threshold citation from the manual ("5.2 mm/s exceeds the safe operating limit of 4.0 mm/s"); no hardcoded escalation logic added — the agent followed the manual's plain-text instruction; 26/26 pytest passing |
 
 ## Next task
 
-Complete **Milestone 5: Complete demo scenarios**. See `tasks.md` for the task list.
+Complete **Milestone 6: Safety and interruption**. See `tasks.md` for the task list.
 
 ## First prompt to give Claude Code
 

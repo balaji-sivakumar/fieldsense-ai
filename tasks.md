@@ -18,7 +18,7 @@ along with the work that completed it.
 | M2 — AssemblyAI voice loop | Sep 8–10 | Complete |
 | M3 — Tool calling | Sep 11–14 | Complete |
 | M4 — RAG | Sep 15–17 | Complete |
-| M5 — Complete demo scenarios | Sep 18–20 | Not started |
+| M5 — Complete demo scenarios | Sep 18–20 | Complete |
 | M6 — Safety and interruption | Sep 21–23 | Not started |
 | M7 — Deployment | Sep 24–25 | Not started |
 | Submission content | Sep 26–27 | Not started |
@@ -97,13 +97,17 @@ along with the work that completed it.
 
 ## M5 — Complete demo scenarios (Sep 18–20)
 
-- [ ] Telemetry simulator: deterministic per-scenario controls (temperature, vibration, discharge pressure)
-- [ ] Scenario 1 (overheating): correlate elevated temperature with maintenance history → surface overdue intake-filter replacement
-- [ ] Scenario 2 (dangerous vibration): reading beyond permitted limit → stop routine troubleshooting → trigger escalation path
-- [ ] Scenario 3 (low discharge pressure): combine telemetry + history + manual guidance → identify probable air leak
-- [ ] Manual test: run each of the 3 scenarios end-to-end by voice
+- [x] Telemetry simulator (`telemetry_simulator.py`): deterministic per-asset, per-scenario readings (normal / overheating / dangerous_vibration / low_pressure), controllable via `/simulator/scenario` REST endpoint + a "Demo controls" UI panel, broadcast to the dashboard on change
+- [x] Fixed seed data so Scenario 1 is genuinely deterministic: intake filter replacement date pushed back to 2025-08-20 (was 2026-06-15, not yet overdue against the manual's 6-month rule)
+- [x] Scenario 1 (overheating): verified live — `get_live_telemetry` → `search_manual` → `get_maintenance_history` → `search_manual` (filter schedule) → `create_work_order` citing the overdue filter
+- [x] Scenario 2 (dangerous vibration): verified live — agent cited the exact manual threshold ("5.2 mm/s exceeds the safe operating limit of 4.0 mm/s") and escalated rather than proposing further troubleshooting
+- [x] Scenario 3 (low discharge pressure): verified live — `get_live_telemetry` → `get_asset_details` → `search_manual` → `get_maintenance_history`, matching the manual's "combine telemetry + history" guidance
+- [x] Manual test: all 3 scenarios run end-to-end by voice, confirmed via real `tool_audit_log` evidence, not just observation
+- [x] Tests: 6 new tests for the simulator (default state, all 3 scenario readings, per-asset isolation, invalid-scenario rejection) — 26/26 passing
 
-**Exit condition:** all 3 fault scenarios from README §"Demo scenarios" work end-to-end via voice.
+**Design decision:** no hardcoded "if vibration > 4.0 then escalate" logic was added — the manual's "Excessive Vibration" section already instructs that behavior in plain text, and the agent followed it because it's grounded in retrieved guidance, not because application code forced it. Keeps the LLM-decides/backend-executes boundary from M3 intact; full safety-tier enforcement is M6's job.
+
+**Exit condition:** met — all 3 fault scenarios from README §"Demo scenarios" verified working end-to-end via voice, with real audit-log evidence including exact-threshold citation from the manual.
 
 ## M6 — Safety and interruption (Sep 21–23)
 

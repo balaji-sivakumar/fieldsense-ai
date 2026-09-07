@@ -10,8 +10,16 @@ type ToolCallEvent = {
   session_id: string;
 };
 
+type ScenarioChangeEvent = {
+  type: "scenario_change";
+  asset_id: string;
+  scenario: string;
+};
+
+type FeedEvent = ToolCallEvent | ScenarioChangeEvent;
+
 export default function Dashboard() {
-  const [events, setEvents] = useState<ToolCallEvent[]>([]);
+  const [events, setEvents] = useState<FeedEvent[]>([]);
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
@@ -21,7 +29,7 @@ export default function Dashboard() {
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
-        if (msg.type === "tool_call") {
+        if (msg.type === "tool_call" || msg.type === "scenario_change") {
           setEvents((prev) => [msg, ...prev].slice(0, 50));
         }
       } catch {
@@ -36,22 +44,32 @@ export default function Dashboard() {
     <section className="panel">
       <div className="panel-header">
         <h2>Live operations feed</h2>
-        <span className="hint">every tool call, audited</span>
+        <span className="hint">every tool call and scenario change, audited</span>
       </div>
 
       <div className="tool-feed">
-        {events.length === 0 && <p className="tool-feed-empty">No tool calls yet.</p>}
-        {events.map((e, i) => (
-          <div key={i} className="tool-call-entry">
-            <div className="tool-call-head">
-              <span className="tool-name">{e.tool_name}</span>
-              <span className={`tool-status ${e.result.status === "ok" ? "ok" : "error"}`}>{e.result.status}</span>
+        {events.length === 0 && <p className="tool-feed-empty">No activity yet.</p>}
+        {events.map((e, i) =>
+          e.type === "scenario_change" ? (
+            <div key={i} className="tool-call-entry">
+              <div className="tool-call-head">
+                <span className="tool-name">scenario_change</span>
+                <span className="tool-status ok">{e.scenario}</span>
+              </div>
+              <div className="tool-line">asset: {e.asset_id}</div>
             </div>
-            <div className="tool-line">session: {e.session_id}</div>
-            <div className="tool-line">args: {JSON.stringify(e.args)}</div>
-            <div className="tool-line">result: {JSON.stringify(e.result.result ?? e.result.error)}</div>
-          </div>
-        ))}
+          ) : (
+            <div key={i} className="tool-call-entry">
+              <div className="tool-call-head">
+                <span className="tool-name">{e.tool_name}</span>
+                <span className={`tool-status ${e.result.status === "ok" ? "ok" : "error"}`}>{e.result.status}</span>
+              </div>
+              <div className="tool-line">session: {e.session_id}</div>
+              <div className="tool-line">args: {JSON.stringify(e.args)}</div>
+              <div className="tool-line">result: {JSON.stringify(e.result.result ?? e.result.error)}</div>
+            </div>
+          ),
+        )}
       </div>
     </section>
   );

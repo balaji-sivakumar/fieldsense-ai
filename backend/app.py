@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()  # must run before database.py reads DATABASE_URL at import time
 
+import telemetry_simulator  # noqa: E402
 from dashboard_hub import dashboard_hub  # noqa: E402
 from database import init_db  # noqa: E402
 from tool_registry import dispatch  # noqa: E402
@@ -78,6 +79,31 @@ async def tool_escalate_to_specialist(payload: dict) -> dict:
 @app.post("/tools/complete_work_order")
 async def tool_complete_work_order(payload: dict) -> dict:
     return await dispatch("complete_work_order", payload, session_id="rest")
+
+
+@app.get("/simulator/scenarios")
+def list_scenarios() -> dict:
+    return {"scenarios": sorted(telemetry_simulator.SCENARIOS)}
+
+
+@app.get("/simulator/scenario/{asset_id}")
+def get_scenario(asset_id: str) -> dict:
+    return {"asset_id": asset_id, "scenario": telemetry_simulator.get_scenario(asset_id)}
+
+
+@app.post("/simulator/scenario")
+async def set_scenario(payload: dict) -> dict:
+    asset_id = payload.get("asset_id")
+    scenario = payload.get("scenario")
+    if not asset_id or not scenario:
+        raise HTTPException(status_code=400, detail="asset_id and scenario are required")
+    try:
+        telemetry_simulator.set_scenario(asset_id, scenario)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    await dashboard_hub.broadcast({"type": "scenario_change", "asset_id": asset_id, "scenario": scenario})
+    return {"asset_id": asset_id, "scenario": scenario}
 
 
 @app.websocket("/ws/voice")

@@ -44,6 +44,26 @@ async function getAsset(assetId: string): Promise<Asset> {
   return res.json();
 }
 
+export type Scenario = "normal" | "overheating" | "dangerous_vibration" | "low_pressure";
+
+async function getScenario(assetId: string): Promise<{ asset_id: string; scenario: Scenario }> {
+  const res = await fetch(`${BASE_URL}/simulator/scenario/${assetId}`);
+  return res.json();
+}
+
+async function setScenario(assetId: string, scenario: Scenario): Promise<{ asset_id: string; scenario: Scenario }> {
+  const res = await fetch(`${BASE_URL}/simulator/scenario`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ asset_id: assetId, scenario }),
+  });
+  if (!res.ok) {
+    const body = await res.json();
+    throw new Error(body.detail ?? "failed to set scenario");
+  }
+  return res.json();
+}
+
 async function callTool<T>(path: string, payload: object): Promise<ToolResult<T>> {
   const res = await fetch(`${BASE_URL}/tools/${path}`, {
     method: "POST",
@@ -60,4 +80,6 @@ export const api = {
     callTool<ManualResult>("search_manual", { asset_model: assetModel, fault_code: faultCode }),
   createWorkOrder: (assetId: string, problem: string, priority: string) =>
     callTool<WorkOrder>("create_work_order", { asset_id: assetId, problem, priority }),
+  getScenario,
+  setScenario,
 };
