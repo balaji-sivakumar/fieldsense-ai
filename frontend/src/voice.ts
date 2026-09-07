@@ -68,6 +68,7 @@ export class MicStreamer {
 export class AudioPlayer {
   private audioCtx: AudioContext;
   private nextStartTime = 0;
+  private scheduledSources: AudioBufferSourceNode[] = [];
 
   constructor() {
     this.audioCtx = new AudioContext({ sampleRate: SAMPLE_RATE });
@@ -91,15 +92,35 @@ export class AudioPlayer {
     const source = this.audioCtx.createBufferSource();
     source.buffer = buffer;
     source.connect(this.audioCtx.destination);
+    source.onended = () => {
+      this.scheduledSources = this.scheduledSources.filter((s) => s !== source);
+    };
 
     const now = this.audioCtx.currentTime;
     const startAt = Math.max(now, this.nextStartTime);
     source.start(startAt);
     this.nextStartTime = startAt + buffer.duration;
+    this.scheduledSources.push(source);
   }
 
   reset(): void {
     this.nextStartTime = 0;
+  }
+
+  // Real barge-in: stop whatever's currently playing/queued and drop the
+  // schedule, per AssemblyAI's guidance ("flush audio buffer... restart
+  // playback stream") on interruption — otherwise the agent's cut-off
+  // reply keeps playing right over the technician.
+  stopAll(): void {
+    for (const source of this.scheduledSources) {
+      try {
+        source.stop();
+      } catch {
+        // already stopped/ended — fine to ignore
+      }
+    }
+    this.scheduledSources = [];
+    this.reset();
   }
 
   async close(): Promise<void> {

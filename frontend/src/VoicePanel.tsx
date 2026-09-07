@@ -7,10 +7,19 @@ type SessionState = "idle" | "connecting" | "ready" | "listening" | "thinking" |
 
 type TranscriptTurn = { speaker: "user" | "agent"; text: string };
 
+const RISK_LABELS: Record<string, string> = {
+  observation: "Observation",
+  low_risk_inspection: "Low-risk inspection",
+  lockout_required: "Lockout required",
+  specialist_required: "Specialist required",
+  dangerous_condition: "Dangerous condition",
+};
+
 export default function VoicePanel() {
   const [state, setState] = useState<SessionState>("idle");
   const [turns, setTurns] = useState<TranscriptTurn[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [riskTier, setRiskTier] = useState<string>("observation");
 
   const wsRef = useRef<WebSocket | null>(null);
   const micRef = useRef<MicStreamer | null>(null);
@@ -31,6 +40,7 @@ export default function VoicePanel() {
   async function startSession() {
     setErrorMessage(null);
     setTurns([]);
+    setRiskTier("observation");
     setState("connecting");
 
     const ws = new WebSocket(WS_URL);
@@ -82,6 +92,12 @@ export default function VoicePanel() {
           case "audio":
             playerRef.current?.playBase64Pcm(msg.data);
             break;
+          case "barge_in":
+            playerRef.current?.stopAll();
+            break;
+          case "risk_tier":
+            setRiskTier(msg.value);
+            break;
           case "error":
             setErrorMessage(msg.message);
             setState("error");
@@ -115,9 +131,11 @@ export default function VoicePanel() {
     wsRef.current?.close();
     wsRef.current = null;
     setState("idle");
+    setRiskTier("observation");
   }
 
   const isLive = state !== "idle" && state !== "closed" && state !== "error";
+  const isElevatedRisk = riskTier !== "observation" && riskTier !== "low_risk_inspection";
 
   return (
     <section className="panel">
@@ -137,6 +155,12 @@ export default function VoicePanel() {
           </button>
         )}
       </div>
+
+      {isLive && (
+        <p style={{ margin: "0 0 0.75rem" }}>
+          Risk: <span className={`state-badge ${isElevatedRisk ? "is-error" : ""}`}>{RISK_LABELS[riskTier] ?? riskTier}</span>
+        </p>
+      )}
 
       {errorMessage && <p className="error-text">Error: {errorMessage}</p>}
 

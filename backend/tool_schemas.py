@@ -124,6 +124,35 @@ TOOL_SCHEMAS = [
             "required": ["work_order_id", "resolution"],
         },
     },
+    {
+        "name": "set_risk_level",
+        "description": (
+            "Declare the current risk classification for this session, per the safety model: "
+            "observation (retrieving info, recording measurements), low_risk_inspection (guiding an "
+            "approved checklist one step at a time), lockout_required (a site lockout/tagout procedure "
+            "must be independently verified complete before continuing), specialist_required (stop "
+            "procedural guidance, a specialist is needed), or dangerous_condition (instruct the "
+            "technician to move away and follow the site's emergency procedure). Call this whenever "
+            "the classification changes, not only when it gets more severe."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "level": {
+                    "type": "string",
+                    "enum": [
+                        "observation",
+                        "low_risk_inspection",
+                        "lockout_required",
+                        "specialist_required",
+                        "dangerous_condition",
+                    ],
+                },
+                "reason": {"type": "string", "description": "Why this classification applies now"},
+            },
+            "required": ["level", "reason"],
+        },
+    },
 ]
 
 TOOL_SCHEMAS_BY_NAME = {schema["name"]: schema for schema in TOOL_SCHEMAS}

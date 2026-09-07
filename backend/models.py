@@ -64,3 +64,8 @@ class ToolAuditLog(Base):
     status = Column(String, nullable=False)
     session_id = Column(String, nullable=False)
     timestamp = Column(DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
+    # Full {"status":..., "result"|"error":...} dispatch() return value, so a
+    # specialist handover (M6) can cite prior tool results (e.g. manual
+    # sources) instead of re-querying or guessing. Nullable so a failed
+    # write here never breaks a tool call.
+    result_json = Column(String, nullable=True)

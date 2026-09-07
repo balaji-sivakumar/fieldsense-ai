@@ -1,18 +1,31 @@
 """Per-technician voice session state.
 
-M2 scope: just enough to track that a session exists and its connection
-state. M6 extends this with risk classification and active work order,
-per architecture.md.
+M6: adds risk_tier, set by voice_ws.py whenever a tool result carries
+a "risk_tier" field (set_risk_level, escalate_to_specialist). Active
+work order tracking is not needed — work_order_id already flows
+through tool arguments/results, and every tool call is independently
+auditable via tool_audit_log.
 """
 
 import uuid
 from dataclasses import dataclass
+
+# Order matches README's safety model table (least to most severe).
+RISK_TIERS = [
+    "observation",
+    "low_risk_inspection",
+    "lockout_required",
+    "specialist_required",
+    "dangerous_condition",
+]
+DEFAULT_RISK_TIER = "observation"
 
 
 @dataclass
 class VoiceSession:
     session_id: str
     state: str = "connecting"  # connecting|ready|listening|thinking|speaking|error|closed
+    risk_tier: str = DEFAULT_RISK_TIER
 
 
 class SessionManager:

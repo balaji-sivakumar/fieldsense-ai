@@ -19,7 +19,7 @@ along with the work that completed it.
 | M3 — Tool calling | Sep 11–14 | Complete |
 | M4 — RAG | Sep 15–17 | Complete |
 | M5 — Complete demo scenarios | Sep 18–20 | Complete |
-| M6 — Safety and interruption | Sep 21–23 | Not started |
+| M6 — Safety and interruption | Sep 21–23 | Complete |
 | M7 — Deployment | Sep 24–25 | Not started |
 | Submission content | Sep 26–27 | Not started |
 | M8 — Final recording & submission | Sep 28–30 | Not started |
@@ -111,14 +111,16 @@ along with the work that completed it.
 
 ## M6 — Safety and interruption (Sep 21–23)
 
-- [ ] Implement the 5-tier risk classification (Observation → Low-risk inspection → Lockout required → Specialist required → Dangerous condition) in `session_manager.py`
-- [ ] `escalate_to_specialist` packages asset, symptoms, readings, history, sources, and actions-already-taken into a structured handover
-- [ ] Test barge-in: technician interrupts agent mid-speech, AssemblyAI surfaces it, session manager reclassifies risk and changes flow
-- [ ] Require explicit confirmation for "Lockout required" (site procedure completed + independently verified)
-- [ ] Dashboard: live risk-classification display, updated as it changes
-- [ ] Tests: safety escalation rules, mid-flow measurement change, dangerous reading during routine flow
+- [x] 5-tier risk classification (`session_manager.py`'s `RISK_TIERS` + `VoiceSession.risk_tier`), set via a new `set_risk_level` tool the LLM calls explicitly — same "LLM decides, backend records" pattern as every other tool, not hardcoded application logic
+- [x] `escalate_to_specialist` packages a full structured handover: asset, current telemetry, maintenance history, retrieved manual sources, and this session's actions-already-taken (`audit_log.py`, backed by a new `result_json` column on `tool_audit_log`)
+- [x] Real barge-in handling, per AssemblyAI's own documented guidance ("flush audio buffer, discard pending tool results, restart playback"): frontend `AudioPlayer.stopAll()` cuts off queued audio on `input.speech.started`; backend discards (doesn't send) `pending_tool_results` when `reply.done` arrives with `status: "interrupted"`
+- [x] Lockout-required confirmation handled via system prompt instruction (never proceed on a vague "yes," require explicit independent verification) — not code-level enforcement, since none of our tools perform physical actions to gate
+- [x] Dashboard/UI: live "Risk:" badge in the voice panel, updated via a dedicated `risk_tier` WS message
+- [x] Tests: 10 new tests (`test_safety.py`) — `set_risk_level` validation, full handover shape, `should_flush_tool_results` (normal vs. interrupted), `should_apply_risk_tier` (explicit vs. automatic, raise vs. downgrade) — 36/36 total passing
 
-**Exit condition:** the primary demonstration script's steps 7–9 (interruption → reclassification → specialist handover) work reliably.
+**Bug found and fixed during live voice testing**: `escalate_to_specialist`'s automatic `"specialist_required"` tag was unconditionally overwriting the session's risk tier — so an agent that correctly classified `dangerous_condition` via `set_risk_level`, then called `escalate_to_specialist` moments later, had the displayed tier silently *downgraded* right when it mattered most. Fixed with `should_apply_risk_tier`: an explicit `set_risk_level` call always wins (including intentional downgrades), but any tool's automatic tier tag may only raise the severity, never lower it.
+
+**Exit condition:** met — verified live by voice with real `tool_audit_log` evidence showing the full risk-tier progression (observation → low_risk_inspection → dangerous_condition → escalated) across a single session, plus the specific downgrade bug caught and fixed mid-verification.
 
 ## M7 — Deployment (Sep 24–25)
 

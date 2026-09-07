@@ -3,7 +3,8 @@
 Protocol with the browser:
 - browser -> backend: raw binary frames (PCM16 mono, 24kHz)
 - backend -> browser: JSON text frames — {"type": "state", "value": ...},
-  transcript events, {"type": "audio", "data": <base64 PCM16>}, or
+  transcript events, {"type": "audio", "data": <base64 PCM16>},
+  {"type": "barge_in"}, {"type": "risk_tier", "value": ...}, or
   {"type": "error", "message": ...}
 """
 
@@ -15,7 +16,7 @@ import os
 from fastapi import WebSocket, WebSocketDisconnect
 
 from assemblyai_gateway import AssemblyAIGateway
-from session_manager import session_manager
+from session_manager import RISK_TIERS, session_manager
 from tool_registry import dispatch
 
 logger = logging.getLogger("voice_ws")
@@ -53,6 +54,25 @@ def _translate_event(event: dict) -> dict | None:
     if event_type == "session.ended":
         return {"type": "ended"}
     return None
+
+
+def should_flush_tool_results(event: dict) -> bool:
+    """AssemblyAI: send tool.result only once reply.done is the latest
+    event, but discard (never send) results for a reply the user
+    interrupted — sending a stale result would answer a turn that's
+    already been abandoned."""
+    return event.get("type") == "reply.done" and event.get("status") != "interrupted"
+
+
+def should_apply_risk_tier(tool_name: str, new_tier: str, current_tier: str) -> bool:
+    """An explicit set_risk_level call always wins — that's its whole
+    purpose, including deliberately downgrading. Any other tool's
+    automatic tier tag (currently just escalate_to_specialist) may only
+    raise the tier, never silently downgrade a more severe
+    classification the agent already made moments earlier."""
+    if tool_name == "set_risk_level":
+        return True
+    return RISK_TIERS.index(new_tier) > RISK_TIERS.index(current_tier)
 
 
 async def handle_voice_websocket(websocket: WebSocket) -> None:
@@ -108,6 +128,16 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
                         "is_error": result.get("status") == "error",
                     }
                 )
+
+                new_tier = result.get("result", {}).get("risk_tier") if result.get("status") == "ok" else None
+                if new_tier and new_tier != session.risk_tier and should_apply_risk_tier(
+                    name, new_tier, session.risk_tier
+                ):
+                    session.risk_tier = new_tier
+                    try:
+                        await websocket.send_json({"type": "risk_tier", "value": new_tier})
+                    except (WebSocketDisconnect, RuntimeError):
+                        return
                 continue
 
             translated = _translate_event(event)
@@ -119,9 +149,19 @@ async def handle_voice_websocket(websocket: WebSocket) -> None:
                     # and this send — benign race, not a session error.
                     return
 
-            if event_type == "reply.done" and pending_tool_results:
-                for pending in pending_tool_results:
-                    await gateway.send_tool_result(**pending)
+            if event_type == "input.speech.started":
+                # Real-time barge-in signal: the user started talking. Safe
+                # to send unconditionally — if the agent wasn't speaking,
+                # the frontend's stop-playback call is just a harmless no-op.
+                try:
+                    await websocket.send_json({"type": "barge_in"})
+                except (WebSocketDisconnect, RuntimeError):
+                    return
+
+            if event_type == "reply.done":
+                if should_flush_tool_results(event):
+                    for pending in pending_tool_results:
+                        await gateway.send_tool_result(**pending)
                 pending_tool_results.clear()
 
     tasks = [

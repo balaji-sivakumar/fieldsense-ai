@@ -1,14 +1,22 @@
 """Central tool dispatch.
 
 Validates every call against its JSON Schema (tool_schemas.py), executes
-it with a timeout, records an audit event, and broadcasts it to the
-judge-facing dashboard. This is the single chokepoint both the REST
-/tools/* endpoints and the AssemblyAI voice loop call through, so every
-tool invocation is audited and visible on the dashboard regardless of
-where it came from.
+it with a timeout, records an audit event (including full result
+content, so a specialist handover can cite prior results), and
+broadcasts it to the judge-facing dashboard. This is the single
+chokepoint both the REST /tools/* endpoints and the AssemblyAI voice
+loop call through, so every tool invocation is audited and visible on
+the dashboard regardless of where it came from.
+
+Session-aware tools (currently just escalate_to_specialist) declare a
+`session_id` parameter in their own signature; dispatch() injects it
+automatically after schema validation. It is never part of a tool's
+JSON Schema, so the LLM can't supply or guess it — the backend is the
+only source of truth for which session is calling.
 """
 
 import asyncio
+import inspect
 import json
 
 import jsonschema
@@ -21,6 +29,7 @@ from tools.asset_tools import get_asset_details
 from tools.maintenance_tools import get_maintenance_history
 from tools.manual_tools import search_manual
 from tools.parts_tools import check_parts_inventory
+from tools.risk_tools import set_risk_level
 from tools.telemetry_tools import get_live_telemetry
 from tools.work_order_tools import (
     complete_work_order,
@@ -39,6 +48,7 @@ TOOLS = {
     "record_observation": record_observation,
     "escalate_to_specialist": escalate_to_specialist,
     "complete_work_order": complete_work_order,
+    "set_risk_level": set_risk_level,
 }
 
 TOOL_TIMEOUT_SECONDS = 10
@@ -59,8 +69,12 @@ async def dispatch(tool_name: str, args: dict, session_id: str = "unknown") -> d
         await _record(tool_name, args, result, session_id)
         return result
 
+    call_args = dict(args)
+    if "session_id" in inspect.signature(tool_fn).parameters:
+        call_args["session_id"] = session_id
+
     try:
-        raw_result = await asyncio.wait_for(asyncio.to_thread(tool_fn, **args), timeout=TOOL_TIMEOUT_SECONDS)
+        raw_result = await asyncio.wait_for(asyncio.to_thread(tool_fn, **call_args), timeout=TOOL_TIMEOUT_SECONDS)
         result = {"status": "ok", "result": raw_result}
     except asyncio.TimeoutError:
         result = {"status": "error", "error": f"{tool_name} timed out after {TOOL_TIMEOUT_SECONDS}s"}
@@ -80,6 +94,7 @@ async def _record(tool_name: str, args: dict, result: dict, session_id: str) -> 
                 args_json=json.dumps(args),
                 status=result.get("status", "unknown"),
                 session_id=session_id,
+                result_json=json.dumps(result),
             )
         )
         db.commit()
