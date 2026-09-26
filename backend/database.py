@@ -8,7 +8,13 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./fieldsense.db")
 
 _connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
-engine = create_engine(DATABASE_URL, connect_args=_connect_args)
+# pool_pre_ping: Neon's serverless Postgres auto-suspends after a few
+# minutes idle. Without this, a long-lived backend process (no restarts
+# between demo sessions) can hold a pooled connection that's gone stale
+# once Neon wakes back up, and SQLAlchemy would try to reuse the dead
+# connection instead of transparently reconnecting. Confirmed this
+# actually happened after a ~3 day gap with no traffic (2026-09-26).
+engine = create_engine(DATABASE_URL, connect_args=_connect_args, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 Base = declarative_base()
 
