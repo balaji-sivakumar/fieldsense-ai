@@ -5,6 +5,18 @@
       "model": "ACX-200",
       "site_id": "SITE-01",
       "manufacturer": "DemoAir"
+    },
+    {
+      "asset_id": "AC-105",
+      "model": "ACX-200",
+      "site_id": "SITE-01",
+      "manufacturer": "DemoAir"
+    },
+    {
+      "asset_id": "AC-106",
+      "model": "ACX-200",
+      "site_id": "SITE-02",
+      "manufacturer": "DemoAir"
     }
   ],
   "maintenance_records": [
@@ -19,6 +31,18 @@
       "date": "2026-03-02",
       "description": "Routine inspection, no issues found",
       "technician": "J. Alvarez"
+    },
+    {
+      "asset_id": "AC-105",
+      "date": "2026-08-15",
+      "description": "Replaced intake filter, routine service",
+      "technician": "M. Chen"
+    },
+    {
+      "asset_id": "AC-106",
+      "date": "2026-01-10",
+      "description": "Replaced drive belt",
+      "technician": "M. Chen"
     }
   ],
   "parts_inventory": [
@@ -33,6 +57,18 @@
       "part_number": "BLT-200",
       "description": "ACX-200 drive belt",
       "quantity_on_hand": 1
+    },
+    {
+      "site_id": "SITE-02",
+      "part_number": "FLT-200",
+      "description": "ACX-200 intake filter",
+      "quantity_on_hand": 2
+    },
+    {
+      "site_id": "SITE-02",
+      "part_number": "BLT-200",
+      "description": "ACX-200 drive belt",
+      "quantity_on_hand": 0
     }
   ]
 }
