@@ -243,6 +243,12 @@ escalate_to_specialist(asset_id, reason, work_order_id)
 complete_work_order(work_order_id, resolution)
 ```
 
+A 10th tool, `set_risk_level(level, reason)`, was added in Milestone 6
+for the safety model (README §"Safety model") — it's how the agent
+declares a risk-tier change, following the same LLM-decides/
+backend-records pattern as every tool above. The full, current set of
+10 is defined in `backend/tool_schemas.py`.
+
 Requirements for every tool:
 
 - Strictly validate input against its schema.
@@ -354,7 +360,7 @@ Do not create all modules prematurely. Begin with the smallest vertical slice an
 
 ## Development milestones
 
-See `docs/milestones.md` for calendar dates against the hackathon's
+See `milestones.md` for calendar dates against the hackathon's
 Sep 30, 8:30 PM IST deadline and which judging criteria each
 milestone feeds.
 
