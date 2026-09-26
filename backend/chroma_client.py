@@ -56,3 +56,20 @@ def check_connection() -> bool:
         return True
     except Exception:
         return False
+
+
+def warm_up() -> None:
+    """Force the default embedding model to download/load now, during
+    startup, instead of on the first real search_manual call.
+
+    Confirmed live (2026-09-26): a fresh container has no cached ONNX
+    model, so the first .query() call triggers an ~80MB download that
+    took 30+ seconds — well past tool_registry's 10s tool timeout,
+    causing a real "search_manual timed out" failure on the first
+    query after any redeploy. .count() alone doesn't trigger this (no
+    embedding needed to just read metadata); only add()/query() do.
+    """
+    try:
+        get_manual_collection().query(query_texts=["warm up"], n_results=1)
+    except Exception:
+        pass  # best-effort — check_connection() is the real health signal

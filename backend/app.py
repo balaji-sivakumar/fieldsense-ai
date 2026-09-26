@@ -27,6 +27,7 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup() -> None:
     database.init_db()
+    chroma_client.warm_up()
 
 
 @app.get("/health")
